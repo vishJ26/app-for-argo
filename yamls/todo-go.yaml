@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-go-depeloyment
+  labels:
+    app: todo-go
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-go
+  template:
+    metadata:
+      labels:
+        app: todo-go
+    spec:
+      containers:
+      - name: todo-go
+        # image: vdocker0123/todo:HPA01
+        image: vdocker0123/todo:alpine
+        # image: vdocker0123/pvt-todo:HPA01
+        # image: mydockybaby/my-private-repo:1.0
+
+        envFrom: 
+          - secretRef:
+              name: todo-go-secret
+          - configMapRef: 
+              name: todo-configmap
+
+
+
+        livenessProbe:
+          httpGet:
+            path: /task
+            port: 8080
+            httpHeaders:
+            - name: Accept
+              value: application/json
+          failureThreshold: 2
+          initialDelaySeconds: 5
+          # periodSeconds: 10
+
+        readinessProbe:
+          httpGet:
+            path: /task
+            port: 8080
+            httpHeaders:
+            - name: Accept
+              value: application/json
+          failureThreshold: 2
+          initialDelaySeconds: 3
+          # periodSeconds: 10
+
+        # imagePullPolicy: Never
+        resources:
+         limits:
+           cpu: 500m
+         requests:
+           cpu: 200m
+
+        # envFrom: 
+        #   - secretRef:
+        #       name: todo-go-secret
+        #   - configMapRef: 
+        #       name: todo-configmap
+        
+
+        # env:
+        #     - name: PORT
+        #       value: "8080"
+        #       # valueFrom:
+        #       #   configMapKeyRef:
+        #       #     name: todo-configmap
+        #       #     key: port
+
+        #     - name: DB_HOST
+        #       valueFrom:
+        #         configMapKeyRef:
+        #           name: todo-configmap
+        #           key: DB_HOST
+        #       # value: localhost
+
+        #     - name: DB_PORT
+        #       valueFrom:
+        #         configMapKeyRef:
+        #           name: todo-configmap
+        #           key: DB_PORT
+        #       # value: "5432"
+
+        #     - name: DB_USER
+        #       valueFrom:
+        #         configMapKeyRef:
+        #           name: todo-configmap
+        #           key: DB_USER
+        #       # value: postgres
+
+        #     - name: DB_PASSWORD
+        #       valueFrom:
+        #         secretKeyRef:
+        #           name: todo-go-secret
+        #           key: DB_PASSWORD
+        #       # value: "123456"
+
+        #     - name: DB_NAME
+        #       valueFrom:
+        #         configMapKeyRef:
+        #           name: todo-configmap
+        #           key: DB_NAME
+        #       # value: todo
+
+        ports:
+        - containerPort: 8080
+      #   volumeMounts:
+      #   - name: todo-config-volume
+      #     mountPath: /etc/app
+      #   - name: todo-secret-volume
+      #     mountPath: /etc/todo/secret
+      #     readOnly: true
+
+      # volumes:
+      # - name: todo-config-volume
+      #   configMap:
+      #     name: todo-configmap
+      # - name: todo-secret-volume
+      #   secret:
+      #     secretName: todo-go-secret
+
+      imagePullSecrets:
+        - name: regcred
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-go-service
+spec:
+  selector:
+    app: todo-go
+  # type: LoadBalancer
+  # type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080 # port on which this service will listen
+      # targetPort: 8080 # port of the deployment container
+      # nodePort: 30001
+
+
+# type : NodePort
+# learn about nodeport and its use, and why we need it. 
